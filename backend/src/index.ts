@@ -43,10 +43,10 @@ const studentSchema = z.object({
   name: z.string().min(2),
   age: z.number().min(3).max(100),
   email_contact: z.string().email(),
-  cel_contact: z.string().min(10).max(12).trim(),
-  evaluation: evaluationSchema,
+  cel_contact: z.string().min(10).max(14).trim(),
+  evaluation: z.string(),
   active: z.boolean().default(true),
-  deficiency: z.array(z.string()).optional(),
+  deficiency: z.string().optional(),
 });
 
 const app = express();
@@ -140,35 +140,60 @@ app.get("/api/students", async (req, res) => {
   }
   res.send(data);
 });
+app.get("/api/students/:id", async (req, res) => {
+  /* const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ error: "Token requerido" });
 
-app.post("/api/students", async (req, res) => {
-  const {
-    name,
-    age,
-    email_contact,
-    cel_contact,
-    evaluation,
-    active,
-    deficiency,
-  } = req.body;
-
-  console.log(req.body);
-
-  const { data, error } = await supabase
-    .from("students")
-    .insert([
-      { name, age, email_contact, cel_contact, evaluation, active, deficiency },
-    ])
-    .select();
-
+  const { data, error } = await supabase.auth.getUser(token); */
+  const { data, error } = await supabase.from("students").select("*").eq("id", req.params.id).maybeSingle();
   if (error) {
     return res.status(500).json({ error: error.message });
   }
-  res.status(201).json(data);
+  res.send(data);
 });
 
-app.delete("/api/students", async (req, res) => {
-  const id = 1;
+app.post("/api/students", async (req, res) => {
+  try {
+    const validatedStudent = studentSchema.parse(req.body);
+    const {
+      name,
+      age,
+      email_contact,
+      cel_contact,
+      evaluation,
+      active,
+      deficiency,
+    } = validatedStudent;
+    const { data, error } = await supabase
+      .from("students")
+      .insert([
+        {
+          name,
+          age,
+          email_contact,
+          cel_contact,
+          evaluation,
+          active,
+          deficiency,
+        },
+      ])
+      .select();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.status(200).json(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      error.issues;
+      return res.status(400).json({ error: error.issues });
+    }
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+app.delete("/api/students/:id", async (req, res) => {
+  const id = req.params.id;
   const { data, error } = await supabase.from("students").delete().eq("id", id);
   if (error) {
     return res.status(500).json({ error: error.message });
@@ -204,7 +229,7 @@ app.put("/api/students/:id", async (req, res) => {
       .select();
 
     if (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ message: error.message });
     }
     res.status(200).json(data);
   } catch (error) {
@@ -214,35 +239,28 @@ app.put("/api/students/:id", async (req, res) => {
     }
     res.status(500).json({ error: "Error del servidor" });
   }
-  const id = 2;
-  const {
-    name,
-    age,
-    email_contact,
-    cel_contact,
-    evaluation,
-    active,
-    deficiency,
-  } = req.body;
-  const { data, error } = await supabase
-    .from("students")
-    .update({
-      name,
-      age,
-      email_contact,
-      cel_contact,
-      evaluation,
-      active,
-      deficiency,
-    })
-    .eq("id", id)
-    .select();
-  if (error) {
-    return res.status(500).json({ error: error.message });
-  }
-  res.send(data);
 });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
+});
+
+
+// login
+
+app.post ("/api/login", async (req, res) => {
+  const { email } = req.body;
+  const { data, error } = await supabase.from("users").select("*").eq("email", email).maybeSingle();
+  if (error) {
+    return res.status(401).json({ error: error.message });
+  }
+  if (!data) {
+    return res.status(404).json({ error: "Usuario no encontrado" });
+  }
+  const { data: sessionData, error: sessionError } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: "http://localhost:4321/dashboard" } });
+  if (sessionError) {
+    return res.status(500).json({ error: sessionError.message });
+  }
+
+  res.json({ message: "OTP enviado, revisa tu correo" });
 });
