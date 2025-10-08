@@ -1,0 +1,49 @@
+---
+export async function getStaticPaths() {
+    const response = await fetch('http://localhost:3000/api/students');
+    if (response.ok) {
+        const students = await response.json();
+        return students.map(student => ({ params: { id: student.id.toString() } }));
+    }
+
+}
+
+
+const { id } = Astro.params;
+let student = null;
+try {
+  const response = await fetch(`http://localhost:3000/api/students/${id}`);
+  if (response.ok) {
+    student = await response.json();
+  } else {
+    console.error("Failed to fetch student data");
+  }
+} catch (error) {
+  console.error("Error fetching student data:", error);
+}
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Info</title>
+</head>
+<body>
+    {student ? (
+        <div>
+            <h1>Información del Estudiante</h1>
+            <p><strong>ID:</strong> {student.id}</p>
+            <p><strong>Nombre:</strong> {student.name}</p>
+            <p><strong>Celular Contacto:</strong> {student.cel_contact}</p>
+            <p><strong>Email Contacto:</strong> {student.email_contact}</p>
+            <p><strong>Edad:</strong> {student.age}</p>
+            <p><strong>Deficiencia:</strong> {student.deficiency}</p>
+            <p><strong>Evaluacion: </strong>{student.evaluation} </p>
+        </div>
+    ) : (
+        <p>Cargando información del estudiante...</p>
+    )}
+</body>
+
+</html>

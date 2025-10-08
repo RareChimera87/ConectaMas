@@ -1,0 +1,148 @@
+---
+export async function getStaticPaths() {
+  const response = await fetch("http://localhost:3000/api/students");
+  if (response.ok) {
+    const students = await response.json();
+    return students.map((student) => ({
+      params: { id: student.id.toString() },
+    }));
+  }
+}
+
+const { id } = Astro.params;
+let student = null;
+try {
+  const response = await fetch(`http://localhost:3000/api/students/${id}`);
+  if (response.ok) {
+    student = await response.json();
+  } else {
+    console.error("Failed to fetch student data");
+  }
+} catch (error) {
+  console.error("Error fetching student data:", error);
+}
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Info</title>
+  </head>
+  <body>
+    {
+      student ? (
+        <form id="editStudentForm" action="" method="PUT">
+          <h1>Información del Estudiante</h1>
+          <input type="hidden" id="id" name="id" value={student.id} />
+          <label for="name">Nombre:</label>
+
+          <input type="text" id="name" name="name" value={student.name} />
+          <br />
+
+          <label for="cel">Celular Contacto:</label>
+          <>
+            <input
+              type="text"
+              id="cel"
+              name="cel"
+              value={student.cel_contact}
+            />
+            <br />
+          </>
+          <label for="email">Email Contacto:</label>
+          <>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={student.email_contact}
+            />
+            <br />
+          </>
+          <label for="age">Edad:</label>
+          <>
+            <input type="number" id="age" name="age" value={student.age} />
+            <br />
+          </>
+          <label for="deficiency">Deficiencia:</label>
+          <>
+            <input
+              type="text"
+              id="deficiency"
+              name="deficiency"
+              value={student.deficiency}
+            />
+            <br />
+          </>
+
+          <label for="evaluation">Evaluacion:</label>
+          <textarea name="evaluation" rows="10" cols="50" id="evaluation">
+            {JSON.stringify(student.evaluation, null, 2)}
+          </textarea>
+          <br />
+          <button type="submit">Guardar Cambios</button>
+        </form>
+      ) : (
+        <p>Cargando información del estudiante...</p>
+      )
+    }
+    <script>
+      const form = document.getElementById(
+        "editStudentForm"
+      ) as HTMLFormElement | null;
+      if (!form) throw new Error("Formulario no encontrado");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault(); // evitar recarga
+
+        const formData = new FormData(form);
+
+        // Construir objeto con los campos normales
+        const data = {
+          name: formData.get("name") as string,
+          id: formData.get("id"),
+          cel_contact: formData.get("cel") as string,
+          email_contact: formData.get("email") as string,
+          age: Number(formData.get("age")) as number,
+          deficiency: formData.get("deficiency") as string,
+          evaluation: formData.get("evaluation"),
+        };
+
+        // Parsear el textarea de evaluación
+
+        try {
+          const response = await fetch(
+            `http://localhost:3000/api/students/${data.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+
+              body: JSON.stringify(data),
+            }
+          );
+
+          if (response.ok) {
+            alert("Estudiante actualizado correctamente");
+            window.location.reload();
+          } else {
+            let errorMsg = "Error desconocido";
+            try {
+              const error = await response.json();
+              errorMsg = error.message || error.error || JSON.stringify(error);
+            } catch {
+              errorMsg = await response.text(); // si viene HTML
+            }
+            alert("Error enviando formulario: " + JSON.stringify(errorMsg));
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Ocurrió un error al actualizar");
+        }
+      });
+    </script>
+  </body>
+</html>
