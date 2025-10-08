@@ -1,0 +1,97 @@
+---
+const res = await fetch("http://localhost:3000/api/students");
+const students = await res.json();
+
+const Activos = students.filter((s) => s.active).length;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dashboard</title>
+  </head>
+  <body>
+    <p>Estudiantes Activos: {Activos}</p>
+    <table id="usersTable" border={1}>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Celular</th>
+          <th>Email</th>
+          <th>Role</th>
+        </tr>
+      </thead>
+      <tbody>
+       
+      </tbody>
+    </table>
+    <table id="studentsTable" border={1}>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Celuar Contacto</th>
+          <th>Email Contacto</th>
+          <th>Edad</th>
+          <th>Deficiencia</th>
+          <th>Evaluacion</th>
+        </tr>
+      </thead>
+      <tbody>
+       
+      </tbody>
+    </table>
+    <script>
+      const tableBody = document.querySelector("#usersTable tbody");
+
+      if (tableBody) {
+        tableBody.innerHTML = "";
+        fetch("http://localhost:3000/api/users")
+          .then((response) => response.json())
+          .then((users) => {
+            users.forEach((user) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.cel}</td>
+                        <td>${user.email}</td>
+                        <td>${user.role}</td>
+                    `;
+              tableBody.appendChild(row);
+            });
+          })
+          .catch((error) => console.error("Error fetching users:", error));
+        const tableBodyStudents = document.querySelector(
+          "#studentsTable tbody"
+        );
+
+        if (tableBodyStudents) {
+          tableBodyStudents.innerHTML = "";
+          const res = fetch("http://localhost:3000/api/students");
+          res
+            .then((response) => response.json())
+            .then((users) => {
+              users.forEach((user) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.cel_contact}</td>
+                        <td>${user.email_contact}</td>
+                        <td>${user.age}</td>
+                        <td>${user.deficiency}</td>
+                        <td><a href="/dashboard/students/${user.id}/info">Informacion</a></td>
+                    `;
+                tableBodyStudents.appendChild(row);
+              });
+            })
+            .catch((error) => console.error("Error fetching users:", error));
+        }
+      }
+    </script>
+  </body>
+</html>
