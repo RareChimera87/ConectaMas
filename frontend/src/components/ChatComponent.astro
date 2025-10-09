@@ -43,6 +43,7 @@ const { studentId, initialConversationId } = Astro.props;
   let messageInput;
   let sendButton;
   let buttonText;
+
   function markdownToHtml(markdown) {
     return markdown
       .replace(/^### (.*$)/gim, "<h3>$1</h3>")

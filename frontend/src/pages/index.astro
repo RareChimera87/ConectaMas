@@ -1,8 +1,13 @@
 ---
-const res = await fetch("http://localhost:3001/api/students");
-const students = await res.json();
+const res = await fetch("http://localhost:3001/api/users");
+const teachers = await res.json();
 
-const Activos = students.filter((s) => s.active).length;
+const Activos = teachers.filter((s) => s.active).length;
+
+const resStudents = await fetch("http://localhost:3001/api/students");
+const students = await resStudents.json();
+
+const ActivosEstudiantes = students.filter((s) => s.active).length;
 ---
 
 <!doctype html>
@@ -10,7 +15,7 @@ const Activos = students.filter((s) => s.active).length;
   <!--begin::Head-->
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Fundación | Dashboard v2</title>
+    <title>Fundación | Dashboard</title>
 
     <!--begin::Accessibility Meta Tags-->
     <meta
@@ -31,7 +36,7 @@ const Activos = students.filter((s) => s.active).length;
     <!--end::Accessibility Meta Tags-->
 
     <!--begin::Primary Meta Tags-->
-    <meta name="title" content="AdminLTE | Dashboard v2" />
+    <meta name="title" content="AdminLTE | Dashboard" />
     <meta name="author" content="ColorlibHQ" />
     <meta
       name="description"
@@ -202,7 +207,7 @@ const Activos = students.filter((s) => s.active).length;
               <li class="nav-item">
                 <a href="/" class="nav-link active">
                   <i class="nav-icon bi bi-speedometer"></i>
-                  <p>Dashboard v2</p>
+                  <p>Dashboard</p>
                 </a>
               </li>
               <li class="nav-item">
@@ -246,7 +251,7 @@ const Activos = students.filter((s) => s.active).length;
             <!--begin::Row-->
             <div class="row">
               <div class="col-sm-6">
-                <h3 class="mb-0">Dashboard v2</h3>
+                <h3 class="mb-0">Dashboard</h3>
               </div>
             </div>
             <!--end::Row-->
@@ -266,7 +271,7 @@ const Activos = students.filter((s) => s.active).length;
 
                   <div class="info-box-content">
                     <span class="info-box-text">Estudiantes</span>
-                    <span class="info-box-number">{Activos}</span>
+                    <span class="info-box-number">{ActivosEstudiantes}</span>
                   </div>
                   <!-- /.info-box-content -->
                 </div>
@@ -281,7 +286,7 @@ const Activos = students.filter((s) => s.active).length;
 
                   <div class="info-box-content">
                     <span class="info-box-text">Docentes</span>
-                    <span class="info-box-number"></span>
+                    <span class="info-box-number">{Activos}</span>
                   </div>
                   <!-- /.info-box-content -->
                 </div>
