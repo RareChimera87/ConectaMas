@@ -3,16 +3,17 @@ import cors from "cors";
 import supabase from "./supabase.js";
 import { z } from "zod";
 import { chatController } from "./controllers/chatController.js";
-try {
+import { Resend } from "resend";
+/* try {
   console.log("Iniciando servidor...");
   console.log("chatController:", chatController);
 } catch (err) {
   console.error("❌ Error al cargar módulos:", err);
-}
+} */
 
 const userSchema = z.object({
   name: z.string().min(2),
-  cel: z.string().min(10).max(12).trim(),
+  cel: z.string().min(10).max(14).trim(),
   email: z.string().email(),
   role: z.enum(["admin", "teacher", "student"]),
 });
@@ -56,6 +57,8 @@ const studentSchema = z.object({
   deficiency: z.string().optional(),
 });
 
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: "http://localhost:4321" }));
@@ -63,7 +66,6 @@ app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.url}`);
   next();
 });
-
 
 app.use("/api/chat", (req, res, next) => {
   console.log("⚠️  MODO DESARROLLO: Sin autenticación");
@@ -76,11 +78,76 @@ app.use("/api/chat", (req, res, next) => {
 
 const port = 3001;
 
+// Correos
+
+app.post("/api/email/send_all", async (req, res) => {
+  try {
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("email");
+
+    const emailsArray = userData?.map((user) => user.email) || [];
+    if (emailsArray) {
+      try {
+        const subject = req.body.subject || "Correo de prueba desde Resend";
+        const body = req.body.body || "<h1>Hola desde Resend!</h1>";
+
+        const { data, error } = await resend.emails.send({
+          from: process.env.RESEND_EMAIL_FROM as string,
+          to: emailsArray,
+          subject: subject,
+          html: body,
+        });
+        if (error) {
+          return res.status(400).json({ error });
+        }
+        res.status(200).json({ data });
+      } catch (error) {
+        console.error("Error al enviar correo:", error);
+        res.status(500).json({ error: "Error al enviar correo" });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+});
+app.post("/api/email/send_personal", async (req, res) => {
+  try {
+    try {
+      const subject = req.body.subject || "Correo de prueba desde Resend";
+      const body = req.body.body || "<h1>Hola desde Resend!</h1>";
+      const toEmail = req.body.toEmail;
+
+      const { data, error } = await resend.emails.send({
+        from: process.env.RESEND_EMAIL_FROM as string,
+        to: toEmail,
+        subject: subject,
+        html: body,
+      });
+      if (error) {
+        return res.status(400).json({ error });
+      }
+      res.status(200).json({ data });
+    } catch (error) {
+      console.error("Error al enviar correo:", error);
+      res.status(500).json({ error: "Error al enviar correo" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+});
+
 // Chat
-app.post("/api/chat/conversations", chatController.createConversation); 
+app.post("/api/chat/conversations", chatController.createConversation);
 app.post("/api/chat/messages", chatController.sendMessage);
-app.get("/api/chat/conversations/:conversation_id", chatController.getConversation);
-app.get("/api/chat/students/:student_id/conversations", chatController.getStudentConversations);
+app.get(
+  "/api/chat/conversations/:conversation_id",
+  chatController.getConversation
+);
+app.get(
+  "/api/chat/students/:student_id/conversations",
+  chatController.getStudentConversations
+);
 console.log("✅ Rutas de chat registradas");
 
 // Usuarios
@@ -98,13 +165,30 @@ app.get("/api/users", async (req, res) => {
   res.send(data);
 });
 
+app.get("/api/users/:id", async (req, res) => {
+  /* const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ error: "Token requerido" });
+
+  const { data, error } = await supabase.auth.getUser(token); */
+  const id = req.params.id;
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+  res.send(data);
+});
+
 app.post("/api/users", async (req, res) => {
   try {
     const validatedUser = userSchema.parse(req.body);
 
     const { name, cel, email, role } = validatedUser;
     const { data, error } = await supabase
-      .from("students")
+      .from("users")
       .insert([{ name, cel, email, role }])
       .select();
 
@@ -121,8 +205,8 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-app.delete("/api/users", async (req, res) => {
-  const id = 1;
+app.delete("/api/users/:id", async (req, res) => {
+  const id = req.params.id;
   const { data, error } = await supabase.from("users").delete().eq("id", id);
   if (error) {
     return res.status(500).json({ error: error.message });
@@ -133,7 +217,7 @@ app.delete("/api/users", async (req, res) => {
 app.put("/api/users/:id", async (req, res) => {
   try {
     const validatedUser = userSchema.parse(req.body);
-    const id = parseInt(req.params.id, 10);
+    const id = req.params.id;
     const { name, cel, email, role } = validatedUser;
     const { data, error } = await supabase
       .from("users")
