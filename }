@@ -273,7 +273,7 @@
                         src="./assets/img/mañana-grupo-1.jpeg" 
                         class="img-fluid rounded" 
                         alt="Schedule 1"
-                        style="max-height: 400px;"
+                        style="max-height: 300px;"
                       />
                       <p class="mt-2 mb-0 text-muted">Grupo 1 - Jornada de la mañana</p>
                     </div>
@@ -287,7 +287,7 @@
                         src="./assets/img/tarde-grupo-1.jpeg" 
                         class="img-fluid rounded" 
                         alt="Schedule 2"
-                        style="max-height: 400px;"
+                        style="max-height: 300px;"
                       />
                       <p class="mt-2 mb-0 text-muted">Grupo 1 - Jornada de la tarde</p>
                     </div>
@@ -323,7 +323,7 @@
                         src="./assets/img/mañana-grupo-3.jpeg"
                         class="img-fluid rounded" 
                         alt="Schedule 4"
-                        style="max-height: 400px;"
+                        style="max-height: 300px;"
                       />
                       <p class="mt-2 mb-0 text-muted">Grupo 3 - Jornada de la mañana</p>
                     </div>
