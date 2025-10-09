@@ -8,7 +8,6 @@ export async function getStaticPaths() {
 
 }
 
-
 const { id } = Astro.params;
 let student = null;
 try {
@@ -27,12 +26,54 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!--begin::Accessibility Features-->
+    <!-- Skip links will be dynamically added by accessibility.js -->
+    <meta name="supported-color-schemes" content="light dark" />
+    <link rel="preload" href="/adminlte/css/adminlte.css" as="style" />
+    <!--end::Accessibility Features-->
+
+    <!--begin::Fonts-->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+      integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
+      crossorigin="anonymous"
+      media="print"
+      onload="this.media='all'"
+    />
+    <!--end::Fonts-->
+
+    <!--begin::Third Party Plugin(OverlayScrollbars)-->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css"
+      crossorigin="anonymous"
+    />
+    <!--end::Third Party Plugin(OverlayScrollbars)-->
+
+    <!--begin::Third Party Plugin(Bootstrap Icons)-->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      crossorigin="anonymous"
+    />
+    <!--end::Third Party Plugin(Bootstrap Icons)-->
+
+    <!--begin::Required Plugin(AdminLTE)-->
+    <link rel="stylesheet" href="/adminlte/css/adminlte.css" />
+    <!--end::Required Plugin(AdminLTE)-->
+
     <title>Student Info</title>
 </head>
 <body>
     {student ? (
-        <div>
-            <h1>Información del Estudiante</h1>
+      <div class="container" style="width: 50%;">
+        <div class="card card-danger">
+          <div class="card-header">
+            <h1 class="card-title">Información del Estudiante</h1>
+          </div>
+          <div class="card-body">
             <p><strong>ID:</strong> {student.id}</p>
             <p><strong>Nombre:</strong> {student.name}</p>
             <p><strong>Celular Contacto:</strong> {student.cel_contact}</p>
@@ -40,7 +81,10 @@ try {
             <p><strong>Edad:</strong> {student.age}</p>
             <p><strong>Deficiencia:</strong> {student.deficiency}</p>
             <p><strong>Evaluacion: </strong>{student.evaluation} </p>
+          </div>
         </div>
+      </div>
+
     ) : (
         <p>Cargando información del estudiante...</p>
     )}

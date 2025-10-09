@@ -210,10 +210,13 @@
           <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-              <div class="col-sm-6">
-                <h3 class="mb-0">Tablas de estudiantes</h3>
+              <div class="col-sm-2">
+                <h3 class="mb-0">Estudiantes</h3>
               </div>
-              <div class="col-sm-6">
+              <div class="col-sm-2">
+                <button id="addStudentForm" type="button" class="btn btn-primary btn-lg">Añadir</button>
+              </div>
+              <div class="col-sm-8">
                 <ol class="breadcrumb float-sm-end">
                   <li class="breadcrumb-item"><a href="/">Home</a></li>
                   <li class="breadcrumb-item active" aria-current="page">Tablas de estudiantes</li>
@@ -237,7 +240,7 @@
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body p-0">
-                  <table class="table table-sm">
+                  <table class="table table-sm" id="studentsTable">
                     <thead>
                       <tr class="align-middle">
                         <th style="width: 80px">#</th>
@@ -249,6 +252,7 @@
                         <th>Evaluación</th>
                         <th>Editar</th>
                         <th>Eliminar</th>
+                        <th>chat</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -317,6 +321,142 @@
     </script>
     <!--end::OverlayScrollbars Configure-->
     <!--end::Script-->
+
+    <!-- STUDENT INFORMATION -->
+    <script>
+      const addStudentForm = document.querySelector("#AddStudent");
+      addStudentForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        window.location.href = "/dashboard/students/add";
+      });
+
+      const tableBodyStudents = document.querySelector("#studentsTable tbody");
+
+      if (tableBodyStudents) {
+        tableBodyStudents.innerHTML = "";
+        const res = fetch("http://localhost:3001/api/students");
+        res
+          .then((response) => response.json())
+          .then((users) => {
+            let numero = 1;
+            users.forEach((user) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                        <td>${numero}</td>
+                        <td>${user.name}</td>
+                        <td>${user.cel_contact}</td>
+                        <td>${user.email_contact}</td>
+                        <td>${user.age}</td>
+                        <td>${user.deficiency}</td>
+                        
+                        <td><a href="/dashboard/students/${user.id}/info">Informacion</a></td>
+                        <td><a href="/dashboard/students/${user.id}/edit">Editar</a></td>
+                        <td><button class="btn-elimina" data-id=${user.id}>Eliminar</button></td>
+                        <td><a href="/dashboard/chat/${user.id}">Chat</a></td>
+                        `;
+              numero += 1;
+              tableBodyStudents.appendChild(row);
+            });
+          })
+          .catch((error) => console.error("Error fetching users:", error));
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        document.body.addEventListener("click", async (event) => {
+          const button = (event.target as HTMLElement).closest(
+            ".btn-elimina"
+          ) as HTMLButtonElement;
+          if (!button) return;
+
+          const id = button.dataset.id;
+          if (!id) return;
+
+          const confirmar = confirm(
+            "¿Estás seguro de eliminar este estudiante?"
+          );
+          if (!confirmar) return;
+
+          try {
+            const response = await fetch(
+              `http://localhost:3001/api/students/${id}`,
+              {
+                method: "DELETE",
+              }
+            );
+
+            if (response.ok) {
+              alert("Estudiante eliminado exitosamente");
+              window.location.reload();
+            } else {
+              let errorMsg;
+              try {
+                const errorData = await response.json();
+                errorMsg = errorData.message || JSON.stringify(errorData);
+              } catch {
+                errorMsg = await response.text();
+              }
+              alert("Error eliminando estudiante: " + errorMsg);
+            }
+          } catch (err) {
+            console.error(err);
+            alert("Error eliminando estudiante");
+          }
+        });
+      });
+    </script>
+    <!-- END::STUDENT INFORMATION -->
+
+    <!--ADD NEW STUDENT -->
+    <script>
+      const form = document.getElementById(
+        "addStudentForm"
+      ) as HTMLFormElement | null;
+      if (!form) throw new Error("Formulario no encontrado");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+
+        const data = {
+          name: formData.get("name") as string,
+          id: formData.get("id"),
+          cel_contact: formData.get("cel") as string,
+          email_contact: formData.get("email") as string,
+          age: Number(formData.get("age")) as number,
+          deficiency: formData.get("deficiency") as string,
+          evaluation: formData.get("evaluation"),
+        };
+
+        try {
+          const response = await fetch(`http://localhost:3001/api/students`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            alert("Estudiante añadido correctamente");
+            window.location.href = "/dashboard/students";
+          } else {
+            let errorMsg = "Error desconocido";
+            try {
+              const error = await response.json();
+              errorMsg = error.message || error.error || JSON.stringify(error);
+            } catch {
+              errorMsg = await response.text(); // si viene HTML
+            }
+            alert("Error enviando formulario: " + JSON.stringify(errorMsg));
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Ocurrió un error al añadir el estudiante");
+        }
+      });
+    </script>
   </body>
   <!--end::Body-->
 </html>
