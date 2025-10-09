@@ -1,8 +1,13 @@
 ---
-const res = await fetch("http://localhost:3001/api/students");
-const students = await res.json();
+const res = await fetch("http://localhost:3001/api/users");
+const teachers = await res.json();
 
-const Activos = students.filter((s) => s.active).length;
+const Activos = teachers.filter((s) => s.active).length;
+
+const resStudents = await fetch("http://localhost:3001/api/students");
+const students = await resStudents.json();
+
+const ActivosEstudiantes = students.filter((s) => s.active).length;
 ---
 
 <!doctype html>
@@ -243,7 +248,7 @@ const Activos = students.filter((s) => s.active).length;
 
                   <div class="info-box-content">
                     <span class="info-box-text">Estudiantes</span>
-                    <span class="info-box-number">{Activos}</span>
+                    <span class="info-box-number">{ActivosEstudiantes}</span>
                   </div>
                   <!-- /.info-box-content -->
                 </div>
@@ -258,7 +263,7 @@ const Activos = students.filter((s) => s.active).length;
 
                   <div class="info-box-content">
                     <span class="info-box-text">Docentes</span>
-                    <span class="info-box-number"></span>
+                    <span class="info-box-number">{Activos}</span>
                   </div>
                   <!-- /.info-box-content -->
                 </div>
