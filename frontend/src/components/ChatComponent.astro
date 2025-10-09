@@ -43,6 +43,17 @@ const { studentId, initialConversationId } = Astro.props;
   let messageInput;
   let sendButton;
   let buttonText;
+  function markdownToHtml(markdown) {
+    return markdown
+      .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+      .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+      .replace(/^# (.*$)/gim, "<h1>$1</h1>")
+      .replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/gim, "<em>$1</em>")
+      .replace(/^- (.*$)/gim, "<li>$1</li>")
+      .replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>")
+      .replace(/\n/g, "<br>");
+  }
 
   // Inicializar cuando el DOM esté listo
   document.addEventListener("DOMContentLoaded", () => {
@@ -203,9 +214,10 @@ const { studentId, initialConversationId } = Astro.props;
     if (role === "system") {
       messageEl.innerHTML = `<div class="system-message">${escapeHtml(content)}</div>`;
     } else {
+      const htmlContent = markdownToHtml(content);
       messageEl.innerHTML = `
         <div class="message-avatar ${role}"></div>
-        <div class="message-content">${escapeHtml(content)}</div>
+        <div class="message-content">${htmlContent}</div>
       `;
     }
 

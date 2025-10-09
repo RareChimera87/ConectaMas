@@ -80,7 +80,7 @@ const port = 3001;
 
 // Correos
 
-app.post("/api/send_email", async (req, res) => {
+app.post("/api/email/send_all", async (req, res) => {
   try {
     const { data: userData, error: userError } = await supabase
       .from("users")
@@ -106,6 +106,31 @@ app.post("/api/send_email", async (req, res) => {
         console.error("Error al enviar correo:", error);
         res.status(500).json({ error: "Error al enviar correo" });
       }
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+});
+app.post("/api/email/send_personal", async (req, res) => {
+  try {
+    try {
+      const subject = req.body.subject || "Correo de prueba desde Resend";
+      const body = req.body.body || "<h1>Hola desde Resend!</h1>";
+      const toEmail = req.body.toEmail;
+
+      const { data, error } = await resend.emails.send({
+        from: process.env.RESEND_EMAIL_FROM as string,
+        to: toEmail,
+        subject: subject,
+        html: body,
+      });
+      if (error) {
+        return res.status(400).json({ error });
+      }
+      res.status(200).json({ data });
+    } catch (error) {
+      console.error("Error al enviar correo:", error);
+      res.status(500).json({ error: "Error al enviar correo" });
     }
   } catch (error) {
     res.status(500).json({ error: "Error al obtener usuarios" });

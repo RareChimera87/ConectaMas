@@ -38,13 +38,16 @@
         };
 
         try {
-          const response = await fetch("http://localhost:3001/api/send_email", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
+          const response = await fetch(
+            "http://localhost:3001/api/email/send_all",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            }
+          );
 
           if (response.ok) {
             alert("Email enviado exitosamente a todos.");
