@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student Info</title>
+    <title>Añadir Profesor</title>
   </head>
   <body>
-    <form id="addStudentForm" action="" method="PUT">
-      <h1>Añadir Estudiante</h1>
+    <form id="addTeacherForm" action="" method="PUT">
+      <h1>Añadir Profesor</h1>
       <input type="hidden" id="id" name="id" />
       <label for="name">Nombre:</label>
 
@@ -24,27 +24,18 @@
         <input type="email" id="email" name="email" />
         <br />
       </>
-      <label for="age">Edad:</label>
+
       <>
-        <input type="number" id="age" name="age" />
-        <br />
-      </>
-      <label for="deficiency">Deficiencia:</label>
-      <>
-        <input type="text" id="deficiency" name="deficiency" />
+        <input type="hidden" id="role" name="role" value="teacher" />
         <br />
       </>
 
-      <label for="evaluation">Evaluacion:</label>
-      <textarea name="evaluation" rows="10" cols="50" id="evaluation">
-      </textarea>
-      <br />
       <button type="submit">Guardar Cambios</button>
     </form>
 
     <script>
       const form = document.getElementById(
-        "addStudentForm"
+        "addTeacherForm"
       ) as HTMLFormElement | null;
       if (!form) throw new Error("Formulario no encontrado");
 
@@ -56,15 +47,13 @@
         const data = {
           name: formData.get("name") as string,
           id: formData.get("id"),
-          cel_contact: formData.get("cel") as string,
-          email_contact: formData.get("email") as string,
-          age: Number(formData.get("age")) as number,
-          deficiency: formData.get("deficiency") as string,
-          evaluation: formData.get("evaluation"),
+          cel: formData.get("cel") as string,
+          email: formData.get("email") as string,
+          role: formData.get("role") as string,
         };
 
         try {
-          const response = await fetch(`http://localhost:3001/api/students`, {
+          const response = await fetch(`http://localhost:3001/api/users`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -74,21 +63,21 @@
           });
 
           if (response.ok) {
-            alert("Estudiante añadido correctamente");
-            window.location.href = "/dashboard/students";
+            alert("Profesor añadido correctamente");
+            window.location.href = "/dashboard/teachers";
           } else {
             let errorMsg = "Error desconocido";
             try {
               const error = await response.json();
               errorMsg = error.message || error.error || JSON.stringify(error);
             } catch {
-              errorMsg = await response.text(); // si viene HTML
+              errorMsg = await response.text();
             }
             alert("Error enviando formulario: " + JSON.stringify(errorMsg));
           }
         } catch (err) {
           console.error(err);
-          alert("Ocurrió un error al añadir el estudiante");
+          alert("Ocurrió un error al añadir al profesor");
         }
       });
     </script>

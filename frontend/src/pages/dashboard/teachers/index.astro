@@ -6,39 +6,35 @@
     <title>Document</title>
   </head>
   <body>
-    <form id="AddStudent">
-      <button type="submit"> Añadir estudiante </button>
+    <form id="AddTeacher">
+      <button type="submit"> Añadir Profesor </button>
     </form>
-    <table id="studentsTable" border={1}>
+    <table id="teachersTable" border={1}>
       <thead>
         <tr>
           <th>#</th>
-          <th>ID</th>
           <th>Nombre</th>
           <th>Celuar Contacto</th>
           <th>Email Contacto</th>
-          <th>Edad</th>
-          <th>Deficiencia</th>
-          <th>Evaluacion</th>
+          <th>Role</th>
           <th>Editar</th>
           <th>Eliminar</th>
-          <th>Chat</th>
         </tr>
       </thead>
       <tbody> </tbody>
     </table>
     <script>
-      const addStudentForm = document.querySelector("#AddStudent");
-      addStudentForm?.addEventListener("submit", (event) => {
+      const addTeacherForm = document.querySelector("#AddTeacher");
+      addTeacherForm?.addEventListener("submit", (event) => {
         event.preventDefault();
-        window.location.href = "/dashboard/students/add";
+        window.location.href = "/dashboard/teachers/add";
       });
 
-      const tableBodyStudents = document.querySelector("#studentsTable tbody");
+      const tableBodyTeachers = document.querySelector("#teachersTable tbody");
 
-      if (tableBodyStudents) {
-        tableBodyStudents.innerHTML = "";
-        const res = fetch("http://localhost:3001/api/students");
+      if (tableBodyTeachers) {
+        tableBodyTeachers.innerHTML = "";
+        const res = fetch("http://localhost:3001/api/users");
         res
           .then((response) => response.json())
           .then((users) => {
@@ -47,20 +43,16 @@
               const row = document.createElement("tr");
               row.innerHTML = `
                         <td>${numero}</td>
-                        <td>${user.id}</td>
                         <td>${user.name}</td>
-                        <td>${user.cel_contact}</td>
-                        <td>${user.email_contact}</td>
-                        <td>${user.age}</td>
-                        <td>${user.deficiency}</td>
+                        <td>${user.cel}</td>
+                        <td>${user.email}</td>
+                        <td>${user.role}</td>
                         
-                        <td><a href="/dashboard/students/${user.id}/info">Informacion</a></td>
-                        <td><a href="/dashboard/students/${user.id}/edit">Editar</a></td>
+                        <td><a href="/dashboard/teachers/${user.id}/edit">Editar</a></td>
                         <td><button class="btn-elimina" data-id=${user.id}>Eliminar</button></td>
-                        <td><a href="/dashboard/chat/${user.id}">Chat</a></td>
                         `;
               numero += 1;
-              tableBodyStudents.appendChild(row);
+              tableBodyTeachers.appendChild(row);
             });
           })
           .catch((error) => console.error("Error fetching users:", error));
@@ -76,21 +68,19 @@
           const id = button.dataset.id;
           if (!id) return;
 
-          const confirmar = confirm(
-            "¿Estás seguro de eliminar este estudiante?"
-          );
+          const confirmar = confirm("¿Estás seguro de eliminar este profesor?");
           if (!confirmar) return;
 
           try {
             const response = await fetch(
-              `http://localhost:3001/api/students/${id}`,
+              `http://localhost:3001/api/users/${id}`,
               {
                 method: "DELETE",
               }
             );
 
             if (response.ok) {
-              alert("Estudiante eliminado exitosamente");
+              alert("Profesor eliminado exitosamente");
               window.location.reload();
             } else {
               let errorMsg;
@@ -100,11 +90,11 @@
               } catch {
                 errorMsg = await response.text();
               }
-              alert("Error eliminando estudiante: " + errorMsg);
+              alert("Error eliminando Profesor: " + errorMsg);
             }
           } catch (err) {
             console.error(err);
-            alert("Error eliminando estudiante");
+            alert("Error eliminando Profesor");
           }
         });
       });
