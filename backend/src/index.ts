@@ -12,7 +12,7 @@ try {
 
 const userSchema = z.object({
   name: z.string().min(2),
-  cel: z.string().min(10).max(12).trim(),
+  cel: z.string().min(10).max(14).trim(),
   email: z.string().email(),
   role: z.enum(["admin", "teacher", "student"]),
 });
@@ -64,7 +64,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
 app.use("/api/chat", (req, res, next) => {
   console.log("⚠️  MODO DESARROLLO: Sin autenticación");
   (req as any).user = {
@@ -77,10 +76,16 @@ app.use("/api/chat", (req, res, next) => {
 const port = 3001;
 
 // Chat
-app.post("/api/chat/conversations", chatController.createConversation); 
+app.post("/api/chat/conversations", chatController.createConversation);
 app.post("/api/chat/messages", chatController.sendMessage);
-app.get("/api/chat/conversations/:conversation_id", chatController.getConversation);
-app.get("/api/chat/students/:student_id/conversations", chatController.getStudentConversations);
+app.get(
+  "/api/chat/conversations/:conversation_id",
+  chatController.getConversation
+);
+app.get(
+  "/api/chat/students/:student_id/conversations",
+  chatController.getStudentConversations
+);
 console.log("✅ Rutas de chat registradas");
 
 // Usuarios
@@ -98,13 +103,30 @@ app.get("/api/users", async (req, res) => {
   res.send(data);
 });
 
+app.get("/api/users/:id", async (req, res) => {
+  /* const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ error: "Token requerido" });
+
+  const { data, error } = await supabase.auth.getUser(token); */
+  const id = req.params.id;
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+  res.send(data);
+});
+
 app.post("/api/users", async (req, res) => {
   try {
     const validatedUser = userSchema.parse(req.body);
 
     const { name, cel, email, role } = validatedUser;
     const { data, error } = await supabase
-      .from("students")
+      .from("users")
       .insert([{ name, cel, email, role }])
       .select();
 
@@ -121,8 +143,8 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-app.delete("/api/users", async (req, res) => {
-  const id = 1;
+app.delete("/api/users/:id", async (req, res) => {
+  const id = req.params.id;
   const { data, error } = await supabase.from("users").delete().eq("id", id);
   if (error) {
     return res.status(500).json({ error: error.message });
@@ -133,7 +155,7 @@ app.delete("/api/users", async (req, res) => {
 app.put("/api/users/:id", async (req, res) => {
   try {
     const validatedUser = userSchema.parse(req.body);
-    const id = parseInt(req.params.id, 10);
+    const id = req.params.id;
     const { name, cel, email, role } = validatedUser;
     const { data, error } = await supabase
       .from("users")
