@@ -90,11 +90,9 @@ const { studentId, initialConversationId } = Astro.props;
           addSystemMessage("Conversacion iniciada. En que puedo ayudarte");
         }
       } else {
-        // Cargar historial existente
         await loadConversationHistory();
       }
 
-      // Habilitar inputs
       enableInputs();
     } catch (error) {
       addSystemMessage("Error iniciando el chat. Intenta nuevamente.");
@@ -114,7 +112,6 @@ const { studentId, initialConversationId } = Astro.props;
         )
         .join("");
 
-      // Agregar event listeners a cada item
       document.querySelectorAll(".conversation-item").forEach((item) => {
         item.addEventListener("click", () => {
           loadConversation(item.getAttribute("data-id"));
@@ -125,26 +122,21 @@ const { studentId, initialConversationId } = Astro.props;
   async function loadConversation(conversationId) {
     console.log("Cargando conversación:", conversationId);
 
-    // Deshabilitar inputs temporalmente
     disableInputs("Cargando...");
 
-    // Actualizar la conversación actual
     currentConversationId = conversationId;
 
     try {
-      // Cargar los mensajes de esta conversación
       const data = await getConversation(conversationId);
       console.log("Datos de la conversación:", data);
 
       if (data.success && data.messages) {
         clearMessages();
 
-        // Mostrar TODOS los mensajes, incluyendo system si quieres
         data.messages.forEach((msg) => {
           addMessage(msg.role, msg.content);
         });
 
-        // Agregar mensaje indicando que se cargó
         addSystemMessage(
           `✅ Conversación cargada (${data.messages.length} mensajes)`
         );
@@ -159,7 +151,6 @@ const { studentId, initialConversationId } = Astro.props;
     }
   }
 
-  // Enviar mensaje
   document
     .getElementById("chat-form")
     ?.addEventListener("submit", async (e) => {
@@ -170,10 +161,8 @@ const { studentId, initialConversationId } = Astro.props;
       const message = messageInput.value.trim();
       if (!message) return;
 
-      // Deshabilitar inputs durante el envío
       disableInputs("Enviando...");
 
-      // Agregar mensaje del usuario
       addMessage("user", message);
       messageInput.value = "";
 
@@ -200,7 +189,6 @@ const { studentId, initialConversationId } = Astro.props;
         addSystemMessage("Error enviando mensaje. Intenta nuevamente.");
         console.error("Error enviando mensaje:", error);
       } finally {
-        // Rehabilitar inputs
         enableInputs();
       }
     });
@@ -300,7 +288,6 @@ const { studentId, initialConversationId } = Astro.props;
       return { success: false, error: "Error fetching conversation" };
     }
   }
-  // Para cargar el historial cuando hay una conversación existente
   async function loadConversationHistory() {
     if (!currentConversationId) return;
 
@@ -312,18 +299,15 @@ const { studentId, initialConversationId } = Astro.props;
     }
   }
 
-  // Para mostrar un listado de conversaciones (ej: en un botón/modal)
   async function showConversationList() {
     const data = await getStudentConversations(studentId);
     if (data.success) {
-      // Aquí puedes mostrar las conversaciones en un modal o sidebar
       data.conversations.forEach((conv) => {
         console.log(`Conversación: ${conv.title} - ${conv.created_at}`);
       });
     }
   }
 
-  // Llamar automáticamente al inicializar si hay conversación
   if (currentConversationId) {
     loadConversationHistory();
   }

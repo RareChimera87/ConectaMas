@@ -1,50 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login </title>
-</head>
-<body>
-    <form id="login-form"  method="POST">
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required placeholder="algo@algo.com">
-        <br>
-        
-        <button type="submit">Login</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+  </head>
+  <body>
+    <form id="login-form" method="POST">
+      <label for="email">Email:</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        required
+        placeholder="algo@algo.com"
+      />
+      <br />
+
+      <button type="submit">Login</button>
     </form>
 
     <script>
-        const form = document.getElementById('login-form') as HTMLFormElement;
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
+      const form = document.getElementById("login-form") as HTMLFormElement;
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
 
-            try {
-                const response = await fetch('http://localhost:3001/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
+        try {
+          const response = await fetch("http://localhost:3001/api/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
 
-                if (response.ok) {
-                    const result = await response.json();
-                    alert(result.message);
-                    // Optionally, redirect to another page
-                    window.location.href = '/wait';
-                } else {
-                    const error = await response.json();
-                    alert('Login failed: ' + error.error);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred during login.');
-            }
-        });
+          if (response.ok) {
+            const result = await response.json();
+            alert(result.message);
+            window.location.href = "/wait";
+          } else {
+            const error = await response.json();
+            alert("Login failed: " + error.error);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("An error occurred during login.");
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

@@ -1,5 +1,5 @@
 ---
-// src/pages/chat/[studentId].astro
+
 import ChatComponent from '../../../components/ChatComponent.astro';
 
 export async function getStaticPaths() {
@@ -9,13 +9,11 @@ export async function getStaticPaths() {
     if (response.ok) {
       const students = await response.json();
       
-      // Asegúrate de que students es un array y tiene la propiedad id
       return students.map((student: any) => ({ 
-        params: { studentId: student.id.toString() }  // ← studentId, no id
+        params: { studentId: student.id.toString() } 
       }));
     }
     
-    // Si hay error, retorna array vacío
     return [];
     
   } catch (error) {
