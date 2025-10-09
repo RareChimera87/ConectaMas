@@ -1,0 +1,63 @@
+import { Client } from "@gradio/client";
+
+const student = {
+  nombre: "Santiago",
+  edad: 8,
+  intereses: ["robots", "videojuegos", "música"],
+  interaccion: "baja, tímido con desconocidos",
+  dificultades: "concentración limitada, necesita rutinas claras",
+  objetivos:
+    "mejorar interacción, motivación por aprender, desarrollo de habilidades motoras finas",
+};
+
+const message = `
+  Genera una metodología personalizada para estimular y motivar a este niño:
+  - Nombre: ${student.nombre}
+  - Edad: ${student.edad}
+  - Intereses: ${student.intereses.join(", ")}
+  - Nivel de interacción social: ${student.interaccion}
+  - Dificultades: ${student.dificultades}
+  - Objetivos: ${student.objetivos}
+  `;
+
+const prompt = `Eres un experto en educación y estimulación de niños con autismo. 
+      Recibirás información detallada sobre un estudiante y debes generar una **metodología personalizada** para estimularlo, mejorar su interacción y aprendizaje. 
+      Tu respuesta debe incluir:
+      1. **Resumen del niño**: edad, intereses, nivel de interacción social, dificultades principales.
+      2. **Objetivos**: metas de estimulación y aprendizaje.
+      3. **Actividades recomendadas**: paso a paso, adaptadas a sus intereses y nivel de comprensión.
+      4. **Consejos para el docente o cuidador**: cómo acercarse, motivar y reforzar positivamente al niño.
+      
+      La información del estudiante es la siguiente:
+      - Nombre: Santiago
+      - Edad: 8 años
+      - Intereses: robots, videojuegos y música
+      - Nivel de interacción social: bajo, tímido con desconocidos
+      - Dificultades: concentración limitada, necesita rutinas claras
+      - Objetivos: mejorar interacción, motivación por aprender, desarrollo de habilidades motoras finas
+      
+      Genera la metodología en un formato **claro y estructurado**, con lenguaje fácil de entender y aplicable en un aula o casa.
+`;
+
+async function checkSpaceStatus() {
+  try {
+    const response = await fetch(
+      "https://huggingface.co/api/spaces/RareChimera87/ConectaMas"
+    );
+    
+    const spaceInfo = await response.json();
+    console.log(spaceInfo)
+    console.log("Información del espacio:", {
+      id: spaceInfo.id,
+      status: spaceInfo.runtime?.status,
+      hardware: spaceInfo.runtime?.hardware,
+      visibility: spaceInfo.visibility
+    });
+    
+    return spaceInfo;
+  } catch (error) {
+    console.error("Error obteniendo info del espacio:", error);
+  }
+}
+
+checkSpaceStatus();

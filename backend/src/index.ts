@@ -3,6 +3,7 @@ import cors from "cors";
 import supabase from "./supabase.js";
 import { z } from "zod";
 
+
 const userSchema = z.object({
   name: z.string().min(2),
   cel: z.string().min(10).max(12).trim(),
@@ -145,7 +146,11 @@ app.get("/api/students/:id", async (req, res) => {
   if (!token) return res.status(401).json({ error: "Token requerido" });
 
   const { data, error } = await supabase.auth.getUser(token); */
-  const { data, error } = await supabase.from("students").select("*").eq("id", req.params.id).maybeSingle();
+  const { data, error } = await supabase
+    .from("students")
+    .select("*")
+    .eq("id", req.params.id)
+    .maybeSingle();
   if (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -245,19 +250,26 @@ app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
 
-
 // login
 
-app.post ("/api/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { email } = req.body;
-  const { data, error } = await supabase.from("users").select("*").eq("email", email).maybeSingle();
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("email", email)
+    .maybeSingle();
   if (error) {
     return res.status(401).json({ error: error.message });
   }
   if (!data) {
     return res.status(404).json({ error: "Usuario no encontrado" });
   }
-  const { data: sessionData, error: sessionError } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: "http://localhost:4321/dashboard" } });
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: "http://localhost:4321/dashboard" },
+    });
   if (sessionError) {
     return res.status(500).json({ error: sessionError.message });
   }

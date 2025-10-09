@@ -9,10 +9,12 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "openai": "^6.2.0",
     "zod": "^4.1.12"
   },
   "type": "module",
   "devDependencies": {
+    "@gradio/client": "^1.19.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
