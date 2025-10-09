@@ -28,7 +28,7 @@
 
       if (tableBodyStudents) {
         tableBodyStudents.innerHTML = "";
-        const res = fetch("http://localhost:3000/api/students");
+        const res = fetch("http://localhost:3001/api/students");
         res
           .then((response) => response.json())
           .then((users) => {
@@ -72,7 +72,7 @@
 
           try {
             const response = await fetch(
-              `http://localhost:3000/api/students/${id}`,
+              `http://localhost:3001/api/students/${id}`,
               {
                 method: "DELETE",
               }

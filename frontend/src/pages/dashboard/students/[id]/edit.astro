@@ -1,6 +1,6 @@
 ---
 export async function getStaticPaths() {
-  const response = await fetch("http://localhost:3000/api/students");
+  const response = await fetch("http://localhost:3001/api/students");
   if (response.ok) {
     const students = await response.json();
     return students.map((student) => ({
@@ -12,7 +12,7 @@ export async function getStaticPaths() {
 const { id } = Astro.params;
 let student = null;
 try {
-  const response = await fetch(`http://localhost:3000/api/students/${id}`);
+  const response = await fetch(`http://localhost:3001/api/students/${id}`);
   if (response.ok) {
     student = await response.json();
   } else {
@@ -114,7 +114,7 @@ try {
 
         try {
           const response = await fetch(
-            `http://localhost:3000/api/students/${data.id}`,
+            `http://localhost:3001/api/students/${data.id}`,
             {
               method: "PUT",
               headers: {
