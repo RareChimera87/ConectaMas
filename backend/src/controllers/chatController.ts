@@ -62,16 +62,14 @@ Nunca des consejos genéricos. Siempre personaliza según la información que te
 Enfócate en: comunicación, habilidades sociales, regulación emocional, adaptaciones académicas, integración sensorial, rutinas y manejo de conductas. Sé empático, práctico y basado en evidencia.`;
 
 export const chatController = {
-  // Crear nueva conversación
   createConversation: async (req: Request, res: Response) => {
     console.log("📥 Body recibido:", req.body);
     console.log("👤 Usuario:", (req as any).user);
 
     try {
       const { student_id } = req.body;
-      const user_id = (req as any).user.id; // Del middleware de auth
+      const user_id = (req as any).user.id;
 
-      // Verificar que el estudiante pertenece al usuario
       const { data: student, error: studentError } = await supabase
         .from("students")
         .select("id, evaluation, deficiency, name, age")
@@ -87,8 +85,6 @@ export const chatController = {
       let PROMPT_PERSONALIZADO =
         SYSTEM_PROMPT +
         ` El estudiante tiene las siguientes características: nombre: ${student.name}, evaluacion: ${student.evaluation}, deficiencia: ${student.deficiency}, edad: ${student.age}. Adapta tus respuestas a estas características. `;
-
-      // Crear conversación
       const { data: conversation, error } = await supabase
         .from("conversations")
         .insert({
@@ -104,7 +100,6 @@ export const chatController = {
         throw error;
       }
 
-      // Mensaje inicial del sistema
       await supabase.from("messages").insert({
         conversation_id: conversation.id,
         role: "system",
@@ -123,7 +118,6 @@ export const chatController = {
     }
   },
 
-  // Enviar mensaje al chat
   sendMessage: async (req: Request, res: Response) => {
     console.log("📨 Mensaje recibido:", req.body);
     try {
@@ -131,7 +125,6 @@ export const chatController = {
       console.log("🔍 Datos:", { conversation_id, message });
       const user_id = (req as any).user.id;
 
-      // Verificar que la conversación pertenece al usuario
       const { data: conversation, error: convError } = await supabase
         .from("conversations")
         .select("id")
@@ -143,7 +136,6 @@ export const chatController = {
         return res.status(404).json({ error: "Conversación no encontrada" });
       }
 
-      // 1. Guardar mensaje del usuario
       const { data: userMessage, error: msgError } = await supabase
         .from("messages")
         .insert({
@@ -156,7 +148,6 @@ export const chatController = {
 
       if (msgError) throw msgError;
 
-      // 2. Obtener historial (últimos 15 mensajes)
       const { data: history, error: historyError } = await supabase
         .from("messages")
         .select("role, content")
@@ -166,7 +157,6 @@ export const chatController = {
 
       if (historyError) throw historyError;
 
-      // 3. Llamar a DeepSeek
       const completion = await openai.chat.completions.create({
         messages: history.map((msg) => ({
           role: msg.role as "user" | "assistant" | "system",
@@ -180,7 +170,6 @@ export const chatController = {
       const assistantResponse = completion.choices[0]?.message.content;
       const tokensUsed = completion.usage?.total_tokens;
 
-      // 4. Guardar respuesta del asistente
       const { data: assistantMessage, error: assistantError } = await supabase
         .from("messages")
         .insert({
@@ -194,7 +183,6 @@ export const chatController = {
 
       if (assistantError) throw assistantError;
 
-      // 5. Actualizar timestamp de la conversación
       await supabase
         .from("conversations")
         .update({ updated_at: new Date().toISOString() })
@@ -214,13 +202,11 @@ export const chatController = {
     }
   },
 
-  // Obtener conversación con mensajes
   getConversation: async (req: Request, res: Response) => {
     try {
       const { conversation_id } = req.params;
       const user_id = (req as any).user.id;
 
-      // Verificar permisos
       const { data: conversation, error: convError } = await supabase
         .from("conversations")
         .select("id")
@@ -232,7 +218,6 @@ export const chatController = {
         return res.status(404).json({ error: "Conversación no encontrada" });
       }
 
-      // Obtener mensajes
       const { data: messages, error: messagesError } = await supabase
         .from("messages")
         .select("*")
@@ -253,7 +238,6 @@ export const chatController = {
     }
   },
 
-  // Listar conversaciones de un estudiante
   getStudentConversations: async (req: Request, res: Response) => {
     try {
       const { student_id } = req.params;

@@ -1,4 +1,3 @@
-// types.ts
 export interface CreateConversationRequest {
   student_id: string;
   title?: string;
@@ -21,7 +20,7 @@ export interface Conversation {
 export interface Message {
   id: string;
   conversation_id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   tokens?: number;
   created_at: string;

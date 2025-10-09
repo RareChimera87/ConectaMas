@@ -19,9 +19,9 @@ const userSchema = z.object({
 });
 
 const evaluationSchema = z.object({
-  date: z.string(), // fecha de la evaluación en ISO
-  clinician: z.string(), // nombre del profesional
-  diagnosis: z.string(), // tipo de autismo o comentarios clínicos
+  date: z.string(),
+  clinician: z.string(),
+  diagnosis: z.string(),
   cognitive: z
     .object({
       iq: z.number().optional(),
