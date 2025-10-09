@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <form id="sendEmailForm" action="" method="POST">
+      <h1>Enviar Email a todos</h1>
+
+      <br />
+
+      <label for="subject">Asunto:</label>
+      <input type="text" id="subject" name="subject" required />
+      <br />
+
+      <label for="body">Cuerpo del Email:</label>
+      <textarea id="body" name="body" rows="10" cols="50" required></textarea>
+      <br />
+
+      <button type="submit">Enviar Email</button>
+    </form>
+
+    <script>
+      const form = document.getElementById(
+        "sendEmailForm"
+      ) as HTMLFormElement | null;
+      if (!form) throw new Error("Formulario no encontrado");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+
+        const data = {
+          subject: formData.get("subject"),
+          body: formData.get("body"),
+        };
+
+        try {
+          const response = await fetch("http://localhost:3001/api/send_email", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            alert("Email enviado exitosamente a todos.");
+          } else {
+            console.log(response);
+            alert("Error al enviar el email.");
+          }
+        } catch (error) {
+          console.error("Error al enviar el email:", error);
+          alert("Error al enviar el email.");
+        }
+      });
+    </script>
+  </body>
+</html>

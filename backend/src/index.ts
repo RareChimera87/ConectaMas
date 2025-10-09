@@ -3,12 +3,13 @@ import cors from "cors";
 import supabase from "./supabase.js";
 import { z } from "zod";
 import { chatController } from "./controllers/chatController.js";
-try {
+import { Resend } from "resend";
+/* try {
   console.log("Iniciando servidor...");
   console.log("chatController:", chatController);
 } catch (err) {
   console.error("❌ Error al cargar módulos:", err);
-}
+} */
 
 const userSchema = z.object({
   name: z.string().min(2),
@@ -56,6 +57,8 @@ const studentSchema = z.object({
   deficiency: z.string().optional(),
 });
 
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: "http://localhost:4321" }));
@@ -74,6 +77,40 @@ app.use("/api/chat", (req, res, next) => {
 });
 
 const port = 3001;
+
+// Correos
+
+app.post("/api/send_email", async (req, res) => {
+  try {
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("email");
+
+    const emailsArray = userData?.map((user) => user.email) || [];
+    if (emailsArray) {
+      try {
+        const subject = req.body.subject || "Correo de prueba desde Resend";
+        const body = req.body.body || "<h1>Hola desde Resend!</h1>";
+
+        const { data, error } = await resend.emails.send({
+          from: process.env.RESEND_EMAIL_FROM as string,
+          to: emailsArray,
+          subject: subject,
+          html: body,
+        });
+        if (error) {
+          return res.status(400).json({ error });
+        }
+        res.status(200).json({ data });
+      } catch (error) {
+        console.error("Error al enviar correo:", error);
+        res.status(500).json({ error: "Error al enviar correo" });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+});
 
 // Chat
 app.post("/api/chat/conversations", chatController.createConversation);
