@@ -1,0 +1,30 @@
+---
+// src/pages/chat/[studentId].astro
+import ChatComponent from '../../../components/ChatComponent.astro';
+
+export async function getStaticPaths() {
+  try {
+    const response = await fetch('http://localhost:3001/api/students');
+    
+    if (response.ok) {
+      const students = await response.json();
+      
+      // Asegúrate de que students es un array y tiene la propiedad id
+      return students.map((student: any) => ({ 
+        params: { studentId: student.id.toString() }  // ← studentId, no id
+      }));
+    }
+    
+    // Si hay error, retorna array vacío
+    return [];
+    
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    return [];
+  }
+}
+
+const { studentId } = Astro.params;
+---
+
+<ChatComponent studentId={studentId} />

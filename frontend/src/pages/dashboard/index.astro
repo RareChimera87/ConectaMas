@@ -1,5 +1,5 @@
 ---
-const res = await fetch("http://localhost:3000/api/students");
+const res = await fetch("http://localhost:3001/api/students");
 const students = await res.json();
 
 const Activos = students.filter((s) => s.active).length;
@@ -49,7 +49,7 @@ const Activos = students.filter((s) => s.active).length;
 
       if (tableBody) {
         tableBody.innerHTML = "";
-        fetch("http://localhost:3000/api/users")
+        fetch("http://localhost:3001/api/users")
           .then((response) => response.json())
           .then((users) => {
             users.forEach((user) => {
@@ -71,7 +71,7 @@ const Activos = students.filter((s) => s.active).length;
 
         if (tableBodyStudents) {
           tableBodyStudents.innerHTML = "";
-          const res = fetch("http://localhost:3000/api/students");
+          const res = fetch("http://localhost:3001/api/students");
           res
             .then((response) => response.json())
             .then((users) => {

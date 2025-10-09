@@ -2,7 +2,13 @@ import express from "express";
 import cors from "cors";
 import supabase from "./supabase.js";
 import { z } from "zod";
-
+import { chatController } from "./controllers/chatController.js";
+try {
+  console.log("Iniciando servidor...");
+  console.log("chatController:", chatController);
+} catch (err) {
+  console.error("❌ Error al cargar módulos:", err);
+}
 
 const userSchema = z.object({
   name: z.string().min(2),
@@ -51,10 +57,31 @@ const studentSchema = z.object({
 });
 
 const app = express();
-app.use(cors({ origin: "http://localhost:4321" }));
-
 app.use(express.json());
-const port = 3000;
+app.use(cors({ origin: "http://localhost:4321" }));
+app.use((req, res, next) => {
+  console.log(`➡️ ${req.method} ${req.url}`);
+  next();
+});
+
+
+app.use("/api/chat", (req, res, next) => {
+  console.log("⚠️  MODO DESARROLLO: Sin autenticación");
+  (req as any).user = {
+    id: "62f6831e-8411-4424-b073-a1861d77a938",
+    email: "test@conecta.com",
+  };
+  next();
+});
+
+const port = 3001;
+
+// Chat
+app.post("/api/chat/conversations", chatController.createConversation); 
+app.post("/api/chat/messages", chatController.sendMessage);
+app.get("/api/chat/conversations/:conversation_id", chatController.getConversation);
+app.get("/api/chat/students/:student_id/conversations", chatController.getStudentConversations);
+console.log("✅ Rutas de chat registradas");
 
 // Usuarios
 

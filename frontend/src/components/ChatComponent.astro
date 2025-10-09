@@ -1,0 +1,471 @@
+---
+// src/components/ChatComponent.astro
+
+interface Props {
+  studentId: string;
+  initialConversationId?: string;
+}
+
+const { studentId, initialConversationId } = Astro.props;
+---
+
+<div class="chat-container">
+  <div class="chat-header">
+    <h3>Chat con Conecta+</h3>
+  </div>
+  <div id="conversations-list" class="conversations-list"></div>
+
+  <div id="messages-container" class="messages-container">
+    <div class="message message-system">
+      <div class="system-message">Inicializando chat...</div>
+    </div>
+  </div>
+
+  <form id="chat-form" class="message-form">
+    <input
+      type="text"
+      id="message-input"
+      placeholder="Escribe tu pregunta sobre el estudiante..."
+      required
+      disabled
+    />
+    <button type="submit" id="send-button" disabled>
+      <span id="button-text">Enviar</span>
+    </button>
+  </form>
+</div>
+
+<script define:vars={{ studentId, initialConversationId }}>
+  const API_BASE = "http://localhost:3001/api";
+  let currentConversationId = initialConversationId || null;
+  // Elementos del DOM con tipos explícitos
+  let messagesContainer;
+  let messageInput;
+  let sendButton;
+  let buttonText;
+
+  // Inicializar cuando el DOM esté listo
+  document.addEventListener("DOMContentLoaded", () => {
+    messagesContainer = document.getElementById("messages-container");
+    messageInput = document.getElementById("message-input");
+    sendButton = document.getElementById("send-button");
+    buttonText = document.getElementById("button-text");
+    console.log("sdsadasdddddsdasdasdadsadasdsa");
+    initializeChat();
+    loadConversationsList();
+  });
+
+  // Inicializar chat
+  async function initializeChat() {
+    try {
+      if (!currentConversationId) {
+        const response = await fetch(
+          "http://localhost:3001/api/chat/conversations",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              student_id: studentId,
+            }),
+          }
+        );
+
+        const data = await response.json();
+        if (data.success) {
+          currentConversationId = data.conversation.id;
+          clearMessages();
+          addSystemMessage("Conversacion iniciada. En que puedo ayudarte");
+        }
+      } else {
+        // Cargar historial existente
+        await loadConversationHistory();
+      }
+
+      // Habilitar inputs
+      enableInputs();
+    } catch (error) {
+      addSystemMessage("Error iniciando el chat. Intenta nuevamente.");
+      console.error("Error inicializando chat:", error);
+    }
+  }
+  async function loadConversationsList() {
+    const data = await getStudentConversations(studentId);
+    if (data.success && data.conversations.length > 0) {
+      const list = document.getElementById("conversations-list");
+      list.innerHTML = data.conversations
+        .map(
+          (conv) =>
+            `<div class="conversation-item" data-id="${conv.id}">
+          <strong>${conv.title}</strong> - ${new Date(conv.created_at).toLocaleDateString()}
+        </div>`
+        )
+        .join("");
+
+      // Agregar event listeners a cada item
+      document.querySelectorAll(".conversation-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          loadConversation(item.getAttribute("data-id"));
+        });
+      });
+    }
+  }
+  async function loadConversation(conversationId) {
+    console.log("Cargando conversación:", conversationId);
+
+    // Deshabilitar inputs temporalmente
+    disableInputs("Cargando...");
+
+    // Actualizar la conversación actual
+    currentConversationId = conversationId;
+
+    try {
+      // Cargar los mensajes de esta conversación
+      const data = await getConversation(conversationId);
+      console.log("Datos de la conversación:", data);
+
+      if (data.success && data.messages) {
+        clearMessages();
+
+        // Mostrar TODOS los mensajes, incluyendo system si quieres
+        data.messages.forEach((msg) => {
+          addMessage(msg.role, msg.content);
+        });
+
+        // Agregar mensaje indicando que se cargó
+        addSystemMessage(
+          `✅ Conversación cargada (${data.messages.length} mensajes)`
+        );
+      } else {
+        addSystemMessage("❌ No hay mensajes en esta conversación");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      addSystemMessage("❌ Error cargando conversación");
+    } finally {
+      enableInputs();
+    }
+  }
+
+  // Enviar mensaje
+  document
+    .getElementById("chat-form")
+    ?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!messageInput || !sendButton || !buttonText) return;
+
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      // Deshabilitar inputs durante el envío
+      disableInputs("Enviando...");
+
+      // Agregar mensaje del usuario
+      addMessage("user", message);
+      messageInput.value = "";
+
+      try {
+        const response = await fetch(`${API_BASE}/chat/messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversation_id: currentConversationId,
+            message: message,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          addMessage("assistant", data.message.content);
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        addSystemMessage("Error enviando mensaje. Intenta nuevamente.");
+        console.error("Error enviando mensaje:", error);
+      } finally {
+        // Rehabilitar inputs
+        enableInputs();
+      }
+    });
+
+  function addMessage(role, content) {
+    if (!messagesContainer) return;
+
+    const messageEl = document.createElement("div");
+    messageEl.className = `message message-${role}`;
+
+    if (role === "system") {
+      messageEl.innerHTML = `<div class="system-message">${escapeHtml(content)}</div>`;
+    } else {
+      messageEl.innerHTML = `
+        <div class="message-avatar ${role}"></div>
+        <div class="message-content">${escapeHtml(content)}</div>
+      `;
+    }
+
+    messagesContainer.appendChild(messageEl);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function addSystemMessage(content) {
+    addMessage("system", content);
+  }
+
+  function clearMessages() {
+    if (messagesContainer) {
+      messagesContainer.innerHTML = "";
+    }
+  }
+
+  function enableInputs() {
+    if (messageInput) messageInput.disabled = false;
+    if (sendButton) sendButton.disabled = false;
+    if (buttonText) buttonText.textContent = "Enviar";
+    if (messageInput) messageInput.focus();
+  }
+
+  function disableInputs(buttonTextContent = "Enviando...") {
+    if (messageInput) messageInput.disabled = true;
+    if (sendButton) sendButton.disabled = true;
+    if (buttonText) buttonText.textContent = buttonTextContent;
+  }
+
+  async function loadConversationHistory() {
+    if (!currentConversationId) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/chat/conversations/${currentConversationId}`,
+        {
+          headers: {},
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        clearMessages();
+        data.messages.forEach((msg) => {
+          if (msg.role !== "system") {
+            addMessage(msg.role, msg.content);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error cargando historial:", error);
+    }
+  }
+
+  function escapeHtml(unsafe) {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+  async function getStudentConversations(studentId) {
+    const response = await fetch(
+      `${API_BASE}/chat/students/${studentId}/conversations`
+    );
+    return await response.json();
+  }
+
+  async function getConversation(conversationId) {
+    try {
+      const response = await fetch(
+        `${API_BASE}/chat/conversations/${conversationId}`
+      );
+      console.log("--------------" + JSON.stringify(response));
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      return { success: false, error: "Error fetching conversation" };
+    }
+  }
+  // Para cargar el historial cuando hay una conversación existente
+  async function loadConversationHistory() {
+    if (!currentConversationId) return;
+
+    const data = await getConversation(currentConversationId);
+    if (data.success) {
+      data.messages.forEach((msg) => {
+        addMessage(msg.role, msg.content);
+      });
+    }
+  }
+
+  // Para mostrar un listado de conversaciones (ej: en un botón/modal)
+  async function showConversationList() {
+    const data = await getStudentConversations(studentId);
+    if (data.success) {
+      // Aquí puedes mostrar las conversaciones en un modal o sidebar
+      data.conversations.forEach((conv) => {
+        console.log(`Conversación: ${conv.title} - ${conv.created_at}`);
+      });
+    }
+  }
+
+  // Llamar automáticamente al inicializar si hay conversación
+  if (currentConversationId) {
+    loadConversationHistory();
+  }
+</script>
+
+<style>
+  .conversations-list {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .conversation-item {
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .conversation-item:hover {
+    background: #f5f5f5;
+  }
+  .chat-container {
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .chat-header {
+    padding: 1rem 1.5rem;
+    background: #4f46e5;
+    color: white;
+  }
+
+  .chat-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .message {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 85%;
+  }
+
+  .message-user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .message-assistant {
+    align-self: flex-start;
+  }
+
+  .message-system {
+    align-self: center;
+    max-width: 100%;
+  }
+
+  .message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .message-avatar.user {
+    background: #4f46e5;
+  }
+
+  .message-avatar.assistant {
+    background: #10b981;
+  }
+
+  .message-content {
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    background: #f3f4f6;
+    line-height: 1.5;
+  }
+
+  .message-user .message-content {
+    background: #4f46e5;
+    color: white;
+  }
+
+  .system-message {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .message-form {
+    display: flex;
+    padding: 1rem 1.5rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    gap: 0.75rem;
+  }
+
+  .message-form input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.75rem;
+    outline: none;
+    transition: border-color 0.2s;
+    font-size: 1rem;
+  }
+
+  .message-form input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+
+  .message-form input:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+  }
+
+  .message-form button {
+    padding: 0.75rem 1.5rem;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1rem;
+  }
+
+  .message-form button:hover:not(:disabled) {
+    background: #4338ca;
+  }
+
+  .message-form button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+</style>
