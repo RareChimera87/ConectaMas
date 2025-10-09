@@ -68,7 +68,7 @@ app.use((req, res, next) => {
 app.use("/api/chat", (req, res, next) => {
   console.log("⚠️  MODO DESARROLLO: Sin autenticación");
   (req as any).user = {
-    id: "user-test-id",
+    id: "62f6831e-8411-4424-b073-a1861d77a938",
     email: "test@conecta.com",
   };
   next();

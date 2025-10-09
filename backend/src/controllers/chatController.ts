@@ -7,7 +7,7 @@ const openai = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY!,
 });
 
-const SYSTEM_PROMPT = `Eres Conecta+, un asistente especializado en educación y apoyo para niños con autismo. 
+let SYSTEM_PROMPT = `Eres Conecta+, un asistente especializado en educación y apoyo para niños con autismo. 
 Proporciona respuestas empáticas, prácticas y basadas en metodologías educativas validadas.`;
 
 export const chatController = {
@@ -23,13 +23,16 @@ export const chatController = {
       // Verificar que el estudiante pertenece al usuario
       const { data: student, error: studentError } = await supabase
         .from("students")
-        .select("id")
+        .select("id, evaluation, deficiency, name, age")
         .eq("id", student_id)
         .single();
 
       if (studentError || !student) {
         return res.status(404).json({ error: "Estudiante no encontrado" });
       }
+      let PROMPT_PERSONALIZADO =
+        SYSTEM_PROMPT +
+        ` El estudiante tiene las siguientes características: nombre: ${student.name}, evaluacion: ${student.evaluation}, deficiencia: ${student.deficiency}, edad: ${student.age}. Adapta tus respuestas a estas características. `;
 
       // Crear conversación
       const { data: conversation, error } = await supabase
@@ -51,7 +54,7 @@ export const chatController = {
       await supabase.from("messages").insert({
         conversation_id: conversation.id,
         role: "system",
-        content: SYSTEM_PROMPT,
+        content: PROMPT_PERSONALIZADO,
       });
 
       res.json({

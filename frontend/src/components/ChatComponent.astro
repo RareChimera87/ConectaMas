@@ -12,7 +12,9 @@ const { studentId, initialConversationId } = Astro.props;
 <div class="chat-container">
   <div class="chat-header">
     <h3>Chat con Conecta+</h3>
+    <button id="show-conversations-btn">Ver conversaciones anteriores</button>
   </div>
+  <div id="conversations-list" class="conversations-list"></div>
 
   <div id="messages-container" class="messages-container">
     <div class="message message-system">
@@ -34,54 +36,48 @@ const { studentId, initialConversationId } = Astro.props;
   </form>
 </div>
 
-<script>
+<script define:vars={{ studentId, initialConversationId }}>
   const API_BASE = "http://localhost:3001/api";
-  let currentConversationId: string | null =
-    '<%= initialConversationId ? initialConversationId : "null" %>';
-  
-  if (currentConversationId === "null") {
-    currentConversationId = null;
-  }
+  let currentConversationId = initialConversationId || null;
   // Elementos del DOM con tipos explícitos
-  let messagesContainer: HTMLElement | null;
-  let messageInput: HTMLInputElement | null;
-  let sendButton: HTMLButtonElement | null;
-  let buttonText: HTMLElement | null;
+  let messagesContainer;
+  let messageInput;
+  let sendButton;
+  let buttonText;
 
   // Inicializar cuando el DOM esté listo
   document.addEventListener("DOMContentLoaded", () => {
     messagesContainer = document.getElementById("messages-container");
-    messageInput = document.getElementById(
-      "message-input"
-    ) as HTMLInputElement | null;
-    sendButton = document.getElementById(
-      "send-button"
-    ) as HTMLButtonElement | null;
+    messageInput = document.getElementById("message-input");
+    sendButton = document.getElementById("send-button");
     buttonText = document.getElementById("button-text");
-
+    console.log("sdsadasdddddsdasdasdadsadasdsa");
     initializeChat();
+    loadConversationsList();
   });
 
   // Inicializar chat
-  async function initializeChat(): Promise<void> {
+  async function initializeChat() {
     try {
       if (!currentConversationId) {
-        const response = await fetch(`${API_BASE}/chat/conversations`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            student_id: "<%= studentId %>",
-          }),
-        });
+        const response = await fetch(
+          "http://localhost:3001/api/chat/conversations",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              student_id: studentId,
+            }),
+          }
+        );
 
         const data = await response.json();
         if (data.success) {
           currentConversationId = data.conversation.id;
           clearMessages();
-          addSystemMessage("Conversación iniciada. ¿En qué puedo ayudarte?");
+          addSystemMessage("Conversacion iniciada. En que puedo ayudarte");
         }
       } else {
         // Cargar historial existente
@@ -93,6 +89,63 @@ const { studentId, initialConversationId } = Astro.props;
     } catch (error) {
       addSystemMessage("Error iniciando el chat. Intenta nuevamente.");
       console.error("Error inicializando chat:", error);
+    }
+  }
+  async function loadConversationsList() {
+    const data = await getStudentConversations(studentId);
+    if (data.success && data.conversations.length > 0) {
+      const list = document.getElementById("conversations-list");
+      list.innerHTML = data.conversations
+        .map(
+          (conv) =>
+            `<div class="conversation-item" data-id="${conv.id}">
+          <strong>${conv.title}</strong> - ${new Date(conv.created_at).toLocaleDateString()}
+        </div>`
+        )
+        .join("");
+
+      // Agregar event listeners a cada item
+      document.querySelectorAll(".conversation-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          loadConversation(item.getAttribute("data-id"));
+        });
+      });
+    }
+  }
+  async function loadConversation(conversationId) {
+    console.log("Cargando conversación:", conversationId);
+
+    // Deshabilitar inputs temporalmente
+    disableInputs("Cargando...");
+
+    // Actualizar la conversación actual
+    currentConversationId = conversationId;
+
+    try {
+      // Cargar los mensajes de esta conversación
+      const data = await getConversation(conversationId);
+      console.log("Datos de la conversación:", data);
+
+      if (data.success && data.messages) {
+        clearMessages();
+
+        // Mostrar TODOS los mensajes, incluyendo system si quieres
+        data.messages.forEach((msg) => {
+          addMessage(msg.role, msg.content);
+        });
+
+        // Agregar mensaje indicando que se cargó
+        addSystemMessage(
+          `✅ Conversación cargada (${data.messages.length} mensajes)`
+        );
+      } else {
+        addSystemMessage("❌ No hay mensajes en esta conversación");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      addSystemMessage("❌ Error cargando conversación");
+    } finally {
+      enableInputs();
     }
   }
 
@@ -118,7 +171,6 @@ const { studentId, initialConversationId } = Astro.props;
         const response = await fetch(`${API_BASE}/chat/messages`, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -143,10 +195,7 @@ const { studentId, initialConversationId } = Astro.props;
       }
     });
 
-  function addMessage(
-    role: "user" | "assistant" | "system",
-    content: string
-  ): void {
+  function addMessage(role, content) {
     if (!messagesContainer) return;
 
     const messageEl = document.createElement("div");
@@ -165,46 +214,44 @@ const { studentId, initialConversationId } = Astro.props;
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
-  function addSystemMessage(content: string): void {
+  function addSystemMessage(content) {
     addMessage("system", content);
   }
 
-  function clearMessages(): void {
+  function clearMessages() {
     if (messagesContainer) {
       messagesContainer.innerHTML = "";
     }
   }
 
-  function enableInputs(): void {
+  function enableInputs() {
     if (messageInput) messageInput.disabled = false;
     if (sendButton) sendButton.disabled = false;
     if (buttonText) buttonText.textContent = "Enviar";
     if (messageInput) messageInput.focus();
   }
 
-  function disableInputs(buttonTextContent: string = "Enviando..."): void {
+  function disableInputs(buttonTextContent = "Enviando...") {
     if (messageInput) messageInput.disabled = true;
     if (sendButton) sendButton.disabled = true;
     if (buttonText) buttonText.textContent = buttonTextContent;
   }
 
-  async function loadConversationHistory(): Promise<void> {
+  async function loadConversationHistory() {
     if (!currentConversationId) return;
 
     try {
       const response = await fetch(
         `${API_BASE}/chat/conversations/${currentConversationId}`,
         {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
+          headers: {},
         }
       );
 
       const data = await response.json();
       if (data.success) {
         clearMessages();
-        data.messages.forEach((msg: any) => {
+        data.messages.forEach((msg) => {
           if (msg.role !== "system") {
             addMessage(msg.role, msg.content);
           }
@@ -215,12 +262,7 @@ const { studentId, initialConversationId } = Astro.props;
     }
   }
 
-  function getAuthToken(): string {
-    // Ajusta esto según cómo manejes la autenticación
-    return ""
-  }
-
-  function escapeHtml(unsafe: string): string {
+  function escapeHtml(unsafe) {
     return unsafe
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -228,9 +270,73 @@ const { studentId, initialConversationId } = Astro.props;
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
   }
+  async function getStudentConversations(studentId) {
+    const response = await fetch(
+      `${API_BASE}/chat/students/${studentId}/conversations`
+    );
+    return await response.json();
+  }
+
+  async function getConversation(conversationId) {
+    try {
+      const response = await fetch(
+        `${API_BASE}/chat/conversations/${conversationId}`
+      );
+      console.log("--------------" + JSON.stringify(response));
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      return { success: false, error: "Error fetching conversation" };
+    }
+  }
+  // Para cargar el historial cuando hay una conversación existente
+  async function loadConversationHistory() {
+    if (!currentConversationId) return;
+
+    const data = await getConversation(currentConversationId);
+    if (data.success) {
+      data.messages.forEach((msg) => {
+        addMessage(msg.role, msg.content);
+      });
+    }
+  }
+
+  // Para mostrar un listado de conversaciones (ej: en un botón/modal)
+  async function showConversationList() {
+    const data = await getStudentConversations(studentId);
+    if (data.success) {
+      // Aquí puedes mostrar las conversaciones en un modal o sidebar
+      data.conversations.forEach((conv) => {
+        console.log(`Conversación: ${conv.title} - ${conv.created_at}`);
+      });
+    }
+  }
+
+  // Llamar automáticamente al inicializar si hay conversación
+  if (currentConversationId) {
+    loadConversationHistory();
+  }
 </script>
 
 <style>
+  .conversations-list {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .conversation-item {
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .conversation-item:hover {
+    background: #f5f5f5;
+  }
   .chat-container {
     height: 600px;
     display: flex;
